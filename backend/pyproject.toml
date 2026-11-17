@@ -1,0 +1,12 @@
+[project]
+name = "lifeoac-backend"
+version = "0.1.0"
+description = "lifeOAC 系统骨架后端"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+]
+
+[tool.uv]
+package = false
