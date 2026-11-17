@@ -532,6 +532,97 @@ a { color: inherit; }
 .filterbar button:hover { color: var(--ink); }
 .filterbar button[aria-pressed='true'] { color: var(--ink); border-bottom-color: var(--ink); }
 
+/* ---------- settings sub-tabs ---------- */
+
+.subtabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 24px;
+  overflow-x: auto;
+}
+.subtabs button {
+  background: none;
+  border: 0;
+  border-bottom: 1.5px solid transparent;
+  padding: 8px 14px 9px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.subtabs button:hover { color: var(--ink); }
+.subtabs button[aria-selected='true'] { color: var(--ink); border-bottom-color: var(--accent); }
+
+/* ---------- finance ---------- */
+
+.plhead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 26px 0 10px;
+  border-bottom: 1px solid var(--rule-strong);
+  margin-bottom: 2px;
+}
+.plhead span:first-child {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.plhead .muted { font-size: 11px; font-family: var(--mono); }
+
+.ledger tr.sect td {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-top: 18px;
+  padding-bottom: 6px;
+  border-bottom: 0;
+}
+.ledger tr.sect td:last-child { color: var(--ink); font-size: 11px; }
+
+.ledger tr.total td {
+  border-top: 1px solid var(--rule-strong);
+  border-bottom: 0;
+  font-weight: 500;
+  padding-top: 10px;
+}
+
+.twocol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  margin-top: 20px;
+}
+
+.detail {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 28px;
+  padding: 18px 0 6px 34px;
+  border-bottom: 1px solid var(--rule);
+  background: rgba(25, 29, 25, 0.018);
+}
+
+/* ---------- statements ---------- */
+
+.ledger.stmt td { padding: 7px 12px; }
+.ledger.stmt td.note-col {
+  color: var(--muted);
+  font-size: 11.5px;
+  text-align: right;
+  white-space: nowrap;
+}
+.ledger.stmt td:last-child { width: 140px; }
+.ledger.stmt td:nth-child(3) { width: 30%; }
+.ledger.stmt tr.sect td { padding-top: 16px; padding-bottom: 5px; }
+
 /* ---------- bars ---------- */
 
 .bar { height: 4px; background: rgba(25, 29, 25, 0.1); position: relative; }
@@ -560,6 +651,11 @@ a { color: inherit; }
   .top { padding: 20px 20px 12px; }
   .top h1 { font-size: 24px; }
   .view { padding: 18px 20px 40px; }
+}
+
+@media (max-width: 1080px) {
+  .twocol { grid-template-columns: 1fr; gap: 0; }
+  .detail { grid-template-columns: 1fr; gap: 16px; }
 }
 
 @media (max-width: 700px) {

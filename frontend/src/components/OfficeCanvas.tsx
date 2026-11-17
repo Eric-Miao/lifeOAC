@@ -76,8 +76,8 @@ export default function OfficeCanvas({ agents, approvals, selectedId, onSelect }
           if (atHome && t > c.next) {
             c.next = t + 5200 + Math.random() * 6500
             if (Math.random() < 0.32) {
-              c.tx = Math.max(14, Math.min(306, seat.x + (Math.random() * 2 - 1) * 11))
-              c.ty = Math.max(38, Math.min(170, seat.y + (Math.random() * 2 - 1) * 13))
+              c.tx = Math.max(14, Math.min(306, seat.x + (Math.random() * 2 - 1) * 18))
+              c.ty = seat.y
             }
           }
         } else {

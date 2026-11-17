@@ -23,6 +23,7 @@ export type Agent = {
   desk_x: number
   desk_y: number
   seat: number
+  subagents: number
 }
 
 export type Approval = {
@@ -79,5 +80,96 @@ export type State = {
   approvals: Approval[]
   threads: Thread[]
   budgets: Budget[]
+  products: Product[]
   audit: AuditRow[]
+}
+
+
+export type Product = {
+  id: string
+  name: string
+  kind: 'app' | 'toy' | 'media' | string
+  owner: string
+  stage: string
+  progress: number
+  milestone: string | null
+  milestone_due: string | null
+  price_cents: number
+  unit_cost_cents: number
+  inventory: number
+  note: string | null
+}
+
+export type PortfolioRow = {
+  id: string
+  name: string
+  kind: string
+  owner: string
+  revenue: number
+  cost: number
+  margin: number
+  margin_pct: number
+  inventory: number
+  unit_cost: number
+  price: number
+  stock_value: number
+}
+
+export type Line = { id: number; period: string; product_id: string | null; section: string; label: string; amount_cents: number; note: string | null }
+
+export type Finance = {
+  period: string
+  currency: string
+  pl: {
+    revenue: Line[]
+    cogs: Line[]
+    opex: Line[]
+    total_revenue: number
+    total_cogs: number
+    gross: number
+    gross_pct: number
+    total_opex: number
+    net: number
+    net_pct: number
+    salary_share: number
+    side_revenue: number
+  }
+  cash: { opening: number; inflow: number; outflow: number; closing: number; monthly_burn: number; runway_months: number }
+  balance: {
+    assets: { label: string; amount: number }[]
+    liabilities: { label: string; amount_cents: number }[]
+    assets_total: number
+    liabilities_total: number
+    equity: number
+  }
+  portfolio: PortfolioRow[]
+}
+
+export type Settings = {
+  billing: {
+    provider: string
+    model: string
+    cap_cents: number
+    spent_cents: number
+    keys: { name: string; masked: string; status: string }[]
+    by_agent: { agent: string; calls: number; cents: number }[]
+  }
+  memory: {
+    namespaces: { name: string; docs: number; tokens: number; updated: string }[]
+    dreaming: { last: string; next: string; kept: number; dropped: number }
+    pending: number
+  }
+  plugins: { id: string; name: string; version: string; scopes: string[]; status: string; owner: string }[]
+  connectors: { id: string; name: string; kind: string; status: string; last: string; detail: string }[]
+  notifications: {
+    brief_at: string
+    channels: { name: string; level: string }[]
+    sources: { name: string; level: string }[]
+  }
+  policy: {
+    version: number
+    effective: string
+    folder_roots: string[]
+    rules: { id: string; action: string; gate: string; approver: string | null }[]
+  }
 }

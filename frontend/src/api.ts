@@ -1,4 +1,4 @@
-import type { Message, State } from './types'
+import type { Finance, Message, Settings, State } from './types'
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -45,3 +45,10 @@ export const timeOnly = (iso: string) => {
   const d = new Date(iso)
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
 }
+
+export const getFinance = () => fetch('/api/finance').then((r) => json<Finance>(r))
+
+export const getSettings = () => fetch('/api/settings').then((r) => json<Settings>(r))
+
+export const runDreaming = () =>
+  fetch('/api/memory/dream', { method: 'POST' }).then((r) => json<{ ok: boolean }>(r))

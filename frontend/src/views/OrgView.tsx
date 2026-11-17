@@ -40,7 +40,7 @@ export default function OrgView({
   return (
     <div className="view">
       <div className="orgwrap">
-        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="组织图：两位联席 CEO 与七位直属负责人">
+        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="组织图：CEO 与七位直属负责人">
           <title>组织图</title>
 
           {ceos.map((a, i) => {
@@ -66,7 +66,7 @@ export default function OrgView({
                   {a.name}
                 </text>
                 <text x={x + 10} y={68} className="role">
-                  联席 CEO · 董事
+                  CEO · 董事
                 </text>
                 <path className="orglink" d={`M${cx} 76 V${busY}`} />
               </g>
@@ -100,6 +100,11 @@ export default function OrgView({
                 <text x={x + 10} y={childY + 52} className="role">
                   {STATUS[a.status] ?? a.status}
                 </text>
+                {a.subagents > 0 && (
+                  <text x={x + CHILD_W - 12} y={childY + 17} className="code" textAnchor="end" fill="#2C6A4A">
+                    ×{a.subagents}
+                  </text>
+                )}
               </g>
             )
           })}
@@ -112,7 +117,7 @@ export default function OrgView({
 
       <p className="note" style={{ marginTop: 16 }}>
         新增一个 CxO 走两步：先和秘书或 CHRO 定义 JD 与协作面，再在系统注册。注册会写一条人事决议，这张图随之刷新。
-        审计不向 CEO 汇报，所以它画在同一层，线上却独立。
+        subagent 不上图：它们是一次性的，只以 ×N 记在所属 CxO 的角上。图每 4 秒重取一次。
       </p>
     </div>
   )

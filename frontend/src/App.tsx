@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getMessages, getState, sendMessage, resolveApproval } from './api'
 import type { Message, State } from './types'
-import { IconLog, IconMoney, IconOffice, IconOrg, IconShield, IconThread } from './components/Icons'
+import { IconBox, IconGear, IconLog, IconMoney, IconOffice, IconOrg, IconThread } from './components/Icons'
 import OfficeView from './views/OfficeView'
 import OrgView from './views/OrgView'
 import ThreadsView from './views/ThreadsView'
 import AuditView from './views/AuditView'
-import BillingView from './views/BillingView'
-import PolicyView from './views/PolicyView'
+import ProductsView from './views/ProductsView'
+import FinanceView from './views/FinanceView'
+import SettingsView from './views/SettingsView'
 
-type ViewId = 'office' | 'org' | 'threads' | 'audit' | 'billing' | 'policy'
+type ViewId = 'office' | 'org' | 'products' | 'finance' | 'threads' | 'audit' | 'settings'
 
 const VIEWS: {
   id: ViewId
@@ -29,14 +30,28 @@ const VIEWS: {
     id: 'org',
     label: '组织图',
     title: '组织图',
-    lede: '两位联席 CEO，七个直属。这张图从人事决议里长出来，不手改。',
+    lede: '一位 CEO，七个直属。这张图从人事决议里长出来，不手改。',
     icon: IconOrg,
+  },
+  {
+    id: 'products',
+    label: '产品',
+    title: '产品',
+    lede: '公司到底在卖什么，各自走到哪一步。每行一个负责人、一个里程碑。',
+    icon: IconBox,
+  },
+  {
+    id: 'finance',
+    label: '财务',
+    title: '财务',
+    lede: '三张表、项目成本、待批。利润不是现金，主业是现金牛。',
+    icon: IconMoney,
   },
   {
     id: 'threads',
     label: '对话',
     title: '对话',
-    lede: '你和每一位 CxO 的直线。秘书只在它的产出要回到你这里时才介入。',
+    lede: '你和每一位 CxO 的直线。秘书只在产出要回到你这里时才介入。',
     icon: IconThread,
   },
   {
@@ -47,18 +62,11 @@ const VIEWS: {
     icon: IconLog,
   },
   {
-    id: 'billing',
-    label: '预算',
-    title: '预算',
-    lede: '每个科目同时持有钱与小时。小时才是真正的硬约束。',
-    icon: IconMoney,
-  },
-  {
-    id: 'policy',
-    label: '权限',
-    title: '权限',
-    lede: '能力令牌、目录沙箱、双签。默认拒绝，显式放行。',
-    icon: IconShield,
+    id: 'settings',
+    label: '设置',
+    title: '设置',
+    lede: '系统自己怎么跑：权限、billing、记忆、插件、连接、打扰强度。',
+    icon: IconGear,
   },
 ]
 
@@ -204,7 +212,7 @@ export default function App() {
           </div>
           <div className="topmeta">
             <span>
-              {data.agents.length} 位 · 2 位联席 CEO
+              {data.agents.length} 个席位 · 你 1 人
             </span>
             <span className="tag">{pending > 0 ? `${pending} 待批` : '无待批'}</span>
           </div>
@@ -243,9 +251,14 @@ export default function App() {
           />
         )}
 
+        {view === 'products' && <ProductsView products={data.products} agents={data.agents} />}
+
+        {view === 'finance' && (
+          <FinanceView approvals={data.approvals} agents={data.agents} onResolve={resolve} />
+        )}
+
         {view === 'audit' && <AuditView rows={data.audit} agents={data.agents} />}
-        {view === 'billing' && <BillingView budgets={data.budgets} agents={data.agents} />}
-        {view === 'policy' && <PolicyView />}
+        {view === 'settings' && <SettingsView />}
       </main>
     </div>
   )

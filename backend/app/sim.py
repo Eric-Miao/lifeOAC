@@ -14,7 +14,7 @@ from datetime import datetime
 
 from .db import now
 
-WORK_STATES = ("working", "working", "working", "idle", "waiting")
+WORK_STATES = ("working", "working", "working", "idle", "idle")
 
 
 def _agent(conn: sqlite3.Connection, agent_id: str) -> sqlite3.Row | None:
@@ -143,9 +143,14 @@ def tick(conn: sqlite3.Connection) -> None:
         "idle": None,
         "waiting": "等一个决定",
     }[status]
-    conn.execute("UPDATE agents SET status = ?, task = ? WHERE id = ?", (status, task, agent["id"]))
+    subs = random.choice([0, 0, 1, 2, 3]) if status == "working" else 0
+    conn.execute(
+        "UPDATE agents SET status = ?, task = ?, subagents = ? WHERE id = ?",
+        (status, task, subs, agent["id"]),
+    )
 
-    if random.random() < 0.06:
+    pending = conn.execute("SELECT COUNT(*) AS n FROM approvals WHERE status='pending'").fetchone()["n"]
+    if pending < 3 and random.random() < 0.025:
         _approval(
             conn,
             agent["id"],
@@ -201,6 +206,7 @@ def state(conn: sqlite3.Connection) -> dict:
         )
     }
     budgets = [dict(r) for r in conn.execute("SELECT * FROM budgets ORDER BY rowid")]
+    products = [dict(r) for r in conn.execute("SELECT * FROM products ORDER BY kind, id")]
     audit = [dict(r) for r in conn.execute("SELECT * FROM audit ORDER BY id DESC LIMIT 60")]
 
     return {
@@ -210,5 +216,6 @@ def state(conn: sqlite3.Connection) -> dict:
         "approvals": approvals,
         "threads": [{"thread": t["thread"], "count": t["n"], "last": last.get(t["thread"])} for t in threads],
         "budgets": budgets,
+        "products": products,
         "audit": audit,
     }

@@ -1,11 +1,4 @@
-import { useEffect, useState } from 'react'
-
-type Policy = {
-  version: number
-  effective: string
-  folder_roots: string[]
-  rules: { id: string; action: string; gate: string; approver: string | null }[]
-}
+import type { Settings } from '../types'
 
 const GATE: Record<string, { label: string; tone: string }> = {
   auto: { label: '放行', tone: 'ok' },
@@ -15,23 +8,10 @@ const GATE: Record<string, { label: string; tone: string }> = {
   deny: { label: '默认拒绝', tone: 'seal' },
 }
 
-export default function PolicyView() {
-  const [policy, setPolicy] = useState<Policy | null>(null)
-  const [err, setErr] = useState(false)
-
-  useEffect(() => {
-    fetch('/api/policy')
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('bad'))))
-      .then(setPolicy)
-      .catch(() => setErr(true))
-  }, [])
-
-  if (err) return <div className="view"><p className="note">策略服务没有响应。</p></div>
-  if (!policy) return <div className="view"><p className="note">读取中…</p></div>
-
+export default function PolicyPanel({ policy }: { policy: Settings['policy'] }) {
   return (
-    <div className="view">
-      <dl className="kv" style={{ marginBottom: 24, maxWidth: 520 }}>
+    <>
+      <dl className="kv" style={{ marginBottom: 22, maxWidth: 520 }}>
         <dt>版本</dt>
         <dd className="num">v{policy.version}</dd>
         <dt>生效</dt>
@@ -72,9 +52,9 @@ export default function PolicyView() {
       </table>
 
       <p className="note" style={{ marginTop: 18 }}>
-        这份策略是文件，带版本号与生效时间。每次运行读取当前版本，运行中的不中途提权。
+        策略是文件，带版本号与生效时间。每次运行读取当前版本，运行中的不中途提权。
         改它要走决议并留审计，否则下一次运行不认。
       </p>
-    </div>
+    </>
   )
 }

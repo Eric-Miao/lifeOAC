@@ -75,7 +75,10 @@ export default function OfficeView({
                 <i className={`dot ${a.status}`} />
                 <span className="code num">{a.code}</span>
                 <span className="nm">{a.name}</span>
-                <span className="st">{STATUS_LABEL[a.status] ?? a.status}</span>
+                <span className="st">
+                  {a.subagents > 0 ? `×${a.subagents} · ` : ''}
+                  {STATUS_LABEL[a.status] ?? a.status}
+                </span>
               </button>
             ))}
           </div>
