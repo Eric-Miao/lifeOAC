@@ -623,6 +623,58 @@ a { color: inherit; }
 .ledger.stmt td:nth-child(3) { width: 30%; }
 .ledger.stmt tr.sect td { padding-top: 16px; padding-bottom: 5px; }
 
+/* ---------- execution ---------- */
+
+.providers { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+
+.chip {
+  border: 1px solid var(--rule-strong);
+  background: transparent;
+  border-radius: 3px;
+  padding: 5px 9px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  cursor: pointer;
+}
+.chip[aria-pressed='true'] { color: var(--ink); border-color: var(--ink); background: #fff; }
+
+.runinput {
+  width: 100%;
+  min-height: 74px;
+  resize: vertical;
+  padding: 9px 10px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  background: #fff;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+.runinput::placeholder { color: rgba(100, 106, 96, 0.85); }
+
+.runitem {
+  border-top: 1px solid var(--rule);
+  padding: 11px 0 12px;
+}
+.runhead { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
+.runprompt { font-size: 12.5px; line-height: 1.5; color: #2b3129; margin-bottom: 4px; }
+.runout {
+  margin: 8px 0 0;
+  padding: 9px 10px;
+  background: rgba(25, 29, 25, 0.035);
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 240px;
+  overflow: auto;
+}
+
 /* ---------- bars ---------- */
 
 .bar { height: 4px; background: rgba(25, 29, 25, 0.1); position: relative; }

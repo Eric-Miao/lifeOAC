@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { money, timeOnly } from '../api'
-import type { Agent, Approval, Message } from '../types'
+import type { Agent, Approval, ExecutionInfo, Message, Run } from '../types'
 import { IconClose, IconSend } from './Icons'
 
 const senderLabel = (sender: string, agents: Agent[]) => {
@@ -18,9 +18,10 @@ export function Transcript({ messages, agents }: { messages: Message[]; agents: 
             <span className="k">{senderLabel(m.sender, agents)}</span>
             <span>{timeOnly(m.ts)}</span>
             {m.kind === 'sandbox' && <span className="tag warn">沙箱</span>}
+            {m.kind === 'real' && <span className="tag seal">真实执行</span>}
             {m.kind === 'seed' && <span className="tag">示例</span>}
           </div>
-          <p>{m.body}</p>
+          <p style={{ whiteSpace: 'pre-wrap' }}>{m.body}</p>
         </div>
       ))}
     </div>
@@ -115,26 +116,88 @@ export function ApprovalCard({
   )
 }
 
+const RUN_LABEL: Record<string, string> = {
+  running: '跑着',
+  completed: '完成',
+  failed: '失败',
+  cancelled: '已取消',
+}
+
+const elapsed = (r: Run) => {
+  const a = new Date(r.started_at).getTime()
+  const b = r.finished_at ? new Date(r.finished_at).getTime() : Date.now()
+  if (Number.isNaN(a) || Number.isNaN(b)) return ''
+  const s = Math.max(0, Math.round((b - a) / 1000))
+  return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m${s % 60}s`
+}
+
+function RunItem({ run, onCancel }: { run: Run; onCancel: (id: number) => Promise<void> }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="runitem">
+      <div className="runhead">
+        <span className={`dot ${run.status === 'completed' ? 'working' : run.status === 'failed' ? 'blocked' : run.status === 'running' ? 'waiting' : 'idle'}`} />
+        <span className="mono" style={{ fontSize: 11 }}>
+          {run.provider}
+        </span>
+        <span className="muted" style={{ fontSize: 12 }}>{RUN_LABEL[run.status] ?? run.status}</span>
+        <span className="mono" style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--muted)' }}>
+          {elapsed(run)}
+        </span>
+      </div>
+      <p className="runprompt">{run.prompt}</p>
+      {(run.content || run.error) && (
+        <>
+          <button className="btn quiet" style={{ padding: 0 }} onClick={() => setOpen(!open)}>
+            {open ? '收起结果' : '看结果'}
+          </button>
+          {open && <pre className="runout">{run.content || run.error}</pre>}
+        </>
+      )}
+      {run.status === 'running' && (
+        <button className="btn" style={{ marginTop: 6 }} onClick={() => void onCancel(run.id)}>
+          取消
+        </button>
+      )}
+    </div>
+  )
+}
+
 export default function Drawer({
   agent,
   messages,
   approvals,
+  runs,
+  execution,
   onSend,
   onResolve,
+  onStartRun,
+  onCancelRun,
   onClose,
 }: {
   agent: Agent
   messages: Message[]
   approvals: Approval[]
+  runs: Run[]
+  execution: ExecutionInfo
   onSend: (body: string) => Promise<void>
   onResolve: (id: number, decision: 'approve' | 'reject') => Promise<void>
+  onStartRun: (provider: string, prompt: string) => Promise<void>
+  onCancelRun: (id: number) => Promise<void>
   onClose: () => void
 }) {
-  const [tab, setTab] = useState<'chat' | 'role' | 'task'>('chat')
+  const [tab, setTab] = useState<'chat' | 'role' | 'task' | 'run'>('chat')
+  const [prompt, setPrompt] = useState('')
+  const [provider, setProvider] = useState('')
+  const [busy, setBusy] = useState(false)
   const bodyRef = useRef<HTMLDivElement>(null)
+
+  const usable = execution.providers.filter((p) => p.available)
+  const mine = runs.filter((r) => r.agent_id === agent.id)
 
   useEffect(() => {
     setTab('chat')
+    setProvider('')
   }, [agent.id])
 
   useEffect(() => {
@@ -142,13 +205,16 @@ export default function Drawer({
   }, [messages, tab])
 
   const pending = approvals.filter((a) => a.agent_id === agent.id)
+  const activeProvider = provider || usable[0]?.provider || ''
 
   return (
     <aside className="sheet" aria-label={`${agent.code} 详情`}>
       <div className="sheet-head" style={{ position: 'relative' }}>
         <div className="who">
           <span className="code">{agent.code}</span>
-          <h2>{tab === 'role' ? '岗位' : tab === 'task' ? '任务' : agent.name}</h2>
+          <h2>
+            {tab === 'role' ? '岗位' : tab === 'task' ? '任务' : tab === 'run' ? '派活' : agent.name}
+          </h2>
         </div>
         <div className="role">{agent.title}</div>
         <button className="btn quiet close" onClick={onClose} aria-label="关闭">
@@ -160,6 +226,7 @@ export default function Drawer({
         {(
           [
             ['chat', '对话'],
+            ['run', '派活'],
             ['role', '岗位'],
             ['task', '任务'],
           ] as const
@@ -167,6 +234,7 @@ export default function Drawer({
           <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}>
             {label}
             {k === 'task' && pending.length > 0 ? ` · ${pending.length}` : ''}
+            {k === 'run' && mine.some((r) => r.status === 'running') ? ' · •' : ''}
           </button>
         ))}
       </div>
@@ -175,11 +243,7 @@ export default function Drawer({
         {tab === 'chat' && (
           <>
             {pending.map((a) => (
-              <ApprovalCard
-                key={a.id}
-                approval={a}
-                onResolve={(d) => onResolve(a.id, d)}
-              />
+              <ApprovalCard key={a.id} approval={a} onResolve={(d) => onResolve(a.id, d)} />
             ))}
             {messages.length === 0 ? (
               <p className="note">
@@ -191,12 +255,69 @@ export default function Drawer({
           </>
         )}
 
+        {tab === 'run' && (
+          <>
+            <p className="note" style={{ marginBottom: 14 }}>
+              {execution.available
+                ? '真实执行：会把这一句交给本地 CLI，子代理在你给的工作区里动手。花模型额度。'
+                : '没装 AutoSwarm，派活不可用。沙箱对话仍然能用。'}
+            </p>
+
+            <div className="providers">
+              {usable.map((p) => (
+                <button
+                  key={p.provider}
+                  className="chip"
+                  aria-pressed={activeProvider === p.provider}
+                  onClick={() => setProvider(p.provider)}
+                >
+                  {p.provider}
+                </button>
+              ))}
+              {usable.length === 0 && <span className="tiny">没有可用的 CLI</span>}
+            </div>
+
+            <textarea
+              className="runinput"
+              value={prompt}
+              placeholder={`让 ${agent.code} 派一个子代理去做：写清楚交付物、验收标准`}
+              onChange={(e) => setPrompt(e.target.value)}
+            />
+            <div className="row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+              <span className="tiny">真实执行 · 会写审计</span>
+              <button
+                className="btn primary"
+                disabled={!prompt.trim() || !activeProvider || busy}
+                onClick={async () => {
+                  setBusy(true)
+                  try {
+                    await onStartRun(activeProvider, prompt.trim())
+                    setPrompt('')
+                  } finally {
+                    setBusy(false)
+                  }
+                }}
+              >
+                {busy ? '派发中' : '派任务'}
+              </button>
+            </div>
+
+            <div style={{ marginTop: 20 }}>
+              {mine.length === 0 ? (
+                <p className="note">还没派过真实任务。</p>
+              ) : (
+                mine.map((r) => <RunItem key={r.id} run={r} onCancel={onCancelRun} />)
+              )}
+            </div>
+          </>
+        )}
+
         {tab === 'role' && (
           <dl className="kv">
             <dt>岗位</dt>
             <dd>{agent.title}</dd>
             <dt>汇报</dt>
-            <dd>{agent.reports_to ?? '董事会（你与伴侣）'}</dd>
+            <dd>{agent.reports_to ?? '董事会'}</dd>
             <dt>范围</dt>
             <dd>{agent.scope}</dd>
             <dt>对什么负责</dt>
@@ -229,9 +350,7 @@ export default function Drawer({
         )}
       </div>
 
-      {tab === 'chat' && (
-        <Composer agent={agent} onSend={async (b) => { await onSend(b) }} />
-      )}
+      {tab === 'chat' && <Composer agent={agent} onSend={async (b) => { await onSend(b) }} />}
     </aside>
   )
 }

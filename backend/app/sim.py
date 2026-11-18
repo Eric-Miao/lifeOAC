@@ -12,6 +12,7 @@ import random
 import sqlite3
 from datetime import datetime
 
+from . import execution
 from .db import now
 
 WORK_STATES = ("working", "working", "working", "idle", "idle")
@@ -209,8 +210,15 @@ def state(conn: sqlite3.Connection) -> dict:
     products = [dict(r) for r in conn.execute("SELECT * FROM products ORDER BY kind, id")]
     audit = [dict(r) for r in conn.execute("SELECT * FROM audit ORDER BY id DESC LIMIT 60")]
 
+    runs = [dict(r) for r in conn.execute("SELECT * FROM runs ORDER BY id DESC LIMIT 20")]
+
     return {
         "mode": "sandbox",
+        "execution": {
+            "available": execution.available(),
+            "providers": execution.providers(),
+        },
+        "runs": runs,
         "server_time": datetime.now().isoformat(timespec="seconds"),
         "agents": agents,
         "approvals": approvals,

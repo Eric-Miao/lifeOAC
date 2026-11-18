@@ -1,4 +1,4 @@
-import type { Finance, Message, Settings, State } from './types'
+import type { Finance, Message, Run, Settings, State } from './types'
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -52,3 +52,13 @@ export const getSettings = () => fetch('/api/settings').then((r) => json<Setting
 
 export const runDreaming = () =>
   fetch('/api/memory/dream', { method: 'POST' }).then((r) => json<{ ok: boolean }>(r))
+
+export const startRun = (agentId: string, provider: string, prompt: string) =>
+  fetch(`/api/agents/${agentId}/runs`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ provider, prompt }),
+  }).then((r) => json<{ ok: boolean; run: Run }>(r))
+
+export const cancelRun = (runId: number) =>
+  fetch(`/api/runs/${runId}/cancel`, { method: 'POST' }).then((r) => json<{ ok: boolean }>(r))

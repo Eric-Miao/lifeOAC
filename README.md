@@ -36,9 +36,20 @@ npm run dev
 
 **Billing 是本系统调用模型的账单**，属于设置；**财务是公司的账**，属于一级页面。两者不混。
 
+## 真实执行（AutoSwarm）
+
+对话仍是本地模拟器；**派活是真的**。抽屉的第二栏能把一句话交给本机的 Codex / OpenCode / DSH，子代理在你给的工作区里动手，结果回写进对话与审计。
+
+```bash
+uv tool install --force git+https://github.com/HKUDS/AutoSwarm   # 或从源码装
+autoswarm agents                                                 # 看本机哪几家可用
+```
+
+我们的记录目录默认 `backend/app/data/autoswarm`，各 CxO 的工作区在 `backend/app/data/workspaces/<agent>`。两者都不入库。设计取舍见 [ADR-0001](docs/adr-0001-autoswarm.md)。
+
 ## 明确没有做的
 
-- **没有接任何模型。** CxO 的回复来自 `backend/app/sim.py` 的规则模拟器，消息上标「沙箱」。接模型是下一步，不是这一版。
+- **对话没有接模型。** CxO 的回复仍来自 `backend/app/sim.py` 的规则模拟器，消息标「沙箱」；只有「派活」走真实 CLI，结果标「真实执行」。
 - **没有 ECE 会议协议。** 会议、材料包、任务包 schema 都还没落。这是骨架之后的第一件事。
 - **没有 plugin 机制。** 权限矩阵里留了 `plugin.install` 的口子，实现没写。
 - **没有真实财务数据。** 预算与审计都是示例值，界面上有标注。

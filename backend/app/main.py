@@ -15,12 +15,17 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from . import finance, sim
+from . import execution, finance, runs, sim
 from .db import connect, now, seed
 
 
 class MessageIn(BaseModel):
     body: str = Field(min_length=1, max_length=4000)
+
+
+class RunIn(BaseModel):
+    prompt: str = Field(min_length=1, max_length=8000)
+    provider: str = Field(min_length=1, max_length=40)
 
 
 class ResolveIn(BaseModel):
@@ -39,6 +44,7 @@ async def lifespan(_: FastAPI):
         while True:
             await asyncio.sleep(6)
             sim.tick(conn)
+            await asyncio.to_thread(runs.refresh, conn)
 
     task = asyncio.create_task(loop())
     yield
@@ -92,6 +98,45 @@ def post_message(agent_id: str, body: MessageIn) -> dict:
 def resolve_approval(approval_id: int, body: ResolveIn) -> dict:
     sim.resolve(conn, approval_id, body.decision, body.note)
     return {"ok": True}
+
+
+@app.get("/api/execution")
+def get_execution() -> dict:
+    return {
+        "available": execution.available(),
+        "home": str(execution.HOME),
+        "providers": execution.providers(),
+    }
+
+
+@app.get("/api/runs")
+def get_runs(agent_id: str | None = None) -> dict:
+    runs.refresh(conn)
+    return {"runs": runs.list_runs(conn, agent_id)}
+
+
+@app.post("/api/agents/{agent_id}/runs")
+def post_run(agent_id: str, body: RunIn) -> dict:
+    agent = conn.execute("SELECT id FROM agents WHERE id = ?", (agent_id,)).fetchone()
+    if agent is None:
+        raise HTTPException(404, "unknown agent")
+    if body.provider not in execution.usable():
+        raise HTTPException(400, f"{body.provider} 不可用")
+
+    made = runs.create(conn, agent_id, body.provider, body.prompt)
+    if not made.get("ok"):
+        raise HTTPException(502, made.get("error") or "派发失败")
+    conn.execute("UPDATE agents SET status='working' WHERE id = ?", (agent_id,))
+    conn.commit()
+    return made
+
+
+@app.post("/api/runs/{run_id}/cancel")
+def cancel_run(run_id: int) -> dict:
+    result = runs.cancel(conn, run_id)
+    if not result.get("ok"):
+        raise HTTPException(400, result.get("error") or "取消失败")
+    return result
 
 
 @app.get("/api/finance")

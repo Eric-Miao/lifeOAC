@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { getMessages, getState, sendMessage, resolveApproval } from './api'
+import { cancelRun, getMessages, getState, sendMessage, resolveApproval, startRun } from './api'
 import type { Message, State } from './types'
 import { IconBox, IconGear, IconLog, IconMoney, IconOffice, IconOrg, IconThread } from './components/Icons'
 import OfficeView from './views/OfficeView'
@@ -119,6 +119,22 @@ export default function App() {
     [load],
   )
 
+  const start = useCallback(
+    async (agentId: string, provider: string, prompt: string) => {
+      await startRun(agentId, provider, prompt)
+      void load()
+    },
+    [load],
+  )
+
+  const stop = useCallback(
+    async (runId: number) => {
+      await cancelRun(runId)
+      void load()
+    },
+    [load],
+  )
+
   const resolve = useCallback(
     async (id: number, decision: 'approve' | 'reject') => {
       await resolveApproval(id, decision)
@@ -196,7 +212,7 @@ export default function App() {
 
         <div className="railfoot">
           <span className="sandbox">
-            <span>沙箱 · 未接模型</span>
+            <span>{data.execution.available ? '沙箱对话 · 执行真实' : '沙箱 · 未接模型'}</span>
           </span>
           <span className="mono" style={{ fontSize: 10, color: 'var(--muted)' }}>
             v0.1 · {data.server_time.slice(11, 16)}
@@ -223,9 +239,13 @@ export default function App() {
             state={data}
             selected={selected}
             messages={messages}
+            runs={data.runs}
+            execution={data.execution}
             onSelect={setSelectedId}
             onSend={send}
             onResolve={resolve}
+            onStartRun={start}
+            onCancelRun={stop}
           />
         )}
 

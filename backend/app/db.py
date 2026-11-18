@@ -115,6 +115,22 @@ CREATE TABLE IF NOT EXISTS policy (
     value TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS runs (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    agent_id    TEXT NOT NULL,
+    provider    TEXT NOT NULL,
+    call_id     TEXT NOT NULL UNIQUE,
+    workspace   TEXT,
+    prompt      TEXT NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'running',
+    content     TEXT,
+    error       TEXT,
+    session_id  TEXT,
+    started_at  TEXT NOT NULL,
+    finished_at TEXT,
+    checked_at  TEXT
+);
+
 CREATE TABLE IF NOT EXISTS settings (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL

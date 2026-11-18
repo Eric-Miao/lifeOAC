@@ -67,6 +67,27 @@ export type AuditRow = {
   meta: string | null
 }
 
+export type Run = {
+  id: number
+  agent_id: string
+  provider: string
+  call_id: string
+  workspace: string | null
+  prompt: string
+  status: 'running' | 'completed' | 'failed' | 'cancelled' | string
+  content: string | null
+  error: string | null
+  session_id: string | null
+  started_at: string
+  finished_at: string | null
+  checked_at: string | null
+}
+
+export type ExecutionInfo = {
+  available: boolean
+  providers: { provider: string; available: boolean; version: string | null; verified: boolean }[]
+}
+
 export type Thread = {
   thread: string
   count: number
@@ -81,6 +102,8 @@ export type State = {
   threads: Thread[]
   budgets: Budget[]
   products: Product[]
+  runs: Run[]
+  execution: ExecutionInfo
   audit: AuditRow[]
 }
 
