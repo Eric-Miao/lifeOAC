@@ -211,6 +211,20 @@ def state(conn: sqlite3.Connection) -> dict:
     audit = [dict(r) for r in conn.execute("SELECT * FROM audit ORDER BY id DESC LIMIT 60")]
 
     runs = [dict(r) for r in conn.execute("SELECT * FROM runs ORDER BY id DESC LIMIT 20")]
+    decisions = [
+        dict(r)
+        for r in conn.execute(
+            "SELECT * FROM events WHERE kind='decision' ORDER BY id DESC LIMIT 10"
+        )
+    ]
+    packages = []
+    for r in conn.execute("SELECT * FROM events WHERE kind='package' ORDER BY id DESC LIMIT 10"):
+        item = dict(r)
+        try:
+            item.update(json.loads(item.get("payload") or "{}"))
+        except json.JSONDecodeError:
+            pass
+        packages.append(item)
     entries = [
         dict(r)
         for r in conn.execute(
@@ -227,6 +241,8 @@ def state(conn: sqlite3.Connection) -> dict:
         "llm": {"online": llm.online(), "default": llm.model_for("")},
         "runs": runs,
         "entries": entries,
+        "decisions": decisions,
+        "packages": packages,
         "server_time": datetime.now().isoformat(timespec="seconds"),
         "agents": agents,
         "approvals": approvals,

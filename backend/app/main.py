@@ -15,7 +15,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from . import chat, execution, finance, llm, runs, sim
+from . import chat, execution, finance, llm, runs, secretary, sim
 from .db import connect, now, seed
 
 
@@ -137,6 +137,12 @@ def cancel_run(run_id: int) -> dict:
     if not result.get("ok"):
         raise HTTPException(400, result.get("error") or "取消失败")
     return result
+
+
+@app.post("/api/_tick")
+def tick(force: bool = True) -> dict:
+    """测试与手动触发用：让秘书巡检一次。"""
+    return secretary.tick(conn, force=force)
 
 
 @app.get("/api/llm")

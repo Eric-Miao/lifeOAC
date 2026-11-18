@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getFinance, money } from '../api'
-import type { Agent, Approval, Finance } from '../types'
+import type { Agent, Approval, DecisionEvent, Finance } from '../types'
 
 const KIND: Record<string, string> = { app: '应用', toy: '实体', media: '内容' }
 
@@ -20,10 +20,12 @@ function PlRow({ label, note, amount }: { label: string; note?: string | null; a
 export default function FinanceView({
   approvals,
   agents,
+  decisions,
   onResolve,
 }: {
   approvals: Approval[]
   agents: Agent[]
+  decisions: DecisionEvent[]
   onResolve: (id: number, d: 'approve' | 'reject') => Promise<void>
 }) {
   const [f, setF] = useState<Finance | null>(null)
@@ -234,6 +236,32 @@ export default function FinanceView({
           ))}
         </tbody>
       </table>
+
+      <div className="plhead" style={{ marginTop: 30 }}>
+        <span>决议</span>
+        <span className="muted">{decisions.length} 条 · 只能被后续决议 supersede</span>
+      </div>
+
+      {decisions.length === 0 ? (
+        <p className="note">还没有决议。ECE 开过之后，这里会记录每一笔额度与取舍。</p>
+      ) : (
+        <table className="ledger stmt">
+          <tbody>
+            {decisions.map((d, i) => (
+              <tr key={d.id}>
+                <td className="idx num">{String(i + 1).padStart(2, '0')}</td>
+                <td>{d.label}</td>
+                <td className="note-col">
+                  {d.period} · {d.actor}
+                </td>
+                <td className="r num">
+                  {d.amount_cents ? money(d.amount_cents) : `${d.hours}h`}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
 
       <div className="plhead" style={{ marginTop: 30 }}>
         <span>待批</span>

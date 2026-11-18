@@ -242,6 +242,7 @@ export default function App() {
             selected={selected}
             messages={messages}
             runs={data.runs}
+            packages={data.packages}
             execution={data.execution}
             onSelect={setSelectedId}
             onSend={send}
@@ -276,7 +277,12 @@ export default function App() {
         {view === 'products' && <ProductsView products={data.products} agents={data.agents} />}
 
         {view === 'finance' && (
-          <FinanceView approvals={data.approvals} agents={data.agents} onResolve={resolve} />
+          <FinanceView
+            approvals={data.approvals}
+            agents={data.agents}
+            decisions={data.decisions}
+            onResolve={resolve}
+          />
         )}
 
         {view === 'audit' && <AuditView rows={data.audit} agents={data.agents} />}

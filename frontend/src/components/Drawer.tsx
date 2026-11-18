@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { money, timeOnly } from '../api'
-import type { Agent, Approval, ExecutionInfo, Message, Run } from '../types'
+import type { Agent, Approval, ExecutionInfo, Message, PackageEvent, Run } from '../types'
 import { IconClose, IconSend } from './Icons'
 
 const senderLabel = (sender: string, agents: Agent[]) => {
@@ -168,6 +168,7 @@ export default function Drawer({
   messages,
   approvals,
   runs,
+  packages,
   execution,
   onSend,
   onResolve,
@@ -179,6 +180,7 @@ export default function Drawer({
   messages: Message[]
   approvals: Approval[]
   runs: Run[]
+  packages: PackageEvent[]
   execution: ExecutionInfo
   onSend: (body: string) => Promise<void>
   onResolve: (id: number, decision: 'approve' | 'reject') => Promise<void>
@@ -205,6 +207,7 @@ export default function Drawer({
   }, [messages, tab])
 
   const pending = approvals.filter((a) => a.agent_id === agent.id)
+  const minePkgs = packages.filter((p) => p.owner === agent.id)
   const activeProvider = provider || usable[0]?.provider || ''
 
   return (
@@ -331,6 +334,26 @@ export default function Drawer({
 
         {tab === 'task' && (
           <>
+            {minePkgs.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <div className="tiny" style={{ marginBottom: 6 }}>
+                  任务包
+                </div>
+                {minePkgs.map((p) => (
+                  <div key={p.id} className="runitem">
+                    <div className="runhead">
+                      <span className="dot waiting" />
+                      <span style={{ fontSize: 12.5 }}>{p.label}</span>
+                      <span className="mono" style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--muted)' }}>
+                        {p.deadline}
+                      </span>
+                    </div>
+                    <p className="runprompt">验收：{p.acceptance}</p>
+                    {p.go_nogo && <p className="tiny">不通过：{p.go_nogo}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
             {pending.length === 0 ? (
               <p className="note">
                 当前没有待批项。任务包由会议编译，{agent.code} 只负责判断与分派，不亲手执行。

@@ -9,7 +9,7 @@ import re
 from datetime import date
 
 PERIOD_RE = re.compile(r"^\d{4}(-Q[1-4])?$")
-KINDS = {"ledger", "spend", "income", "decision", "package", "run", "message", "meeting"}
+KINDS = {"ledger", "spend", "income", "decision", "package", "product", "run", "message", "meeting"}
 SECTIONS = {"revenue", "cogs", "opex"}
 
 
@@ -32,6 +32,33 @@ def validate_event(e: dict) -> tuple[bool, str]:
     if not label:
         return False, "label 不能为空"
     e["label"] = label[:120]
+
+    if kind == "decision":
+        e["approved_by"] = e.get("approved_by") or "CEO"
+        try:
+            e["amount_cents"] = max(0, int(e.get("amount_cents") or 0))
+            e["hours"] = max(0, int(e.get("hours") or 0))
+        except (TypeError, ValueError):
+            return False, "金额与小时必须是整数"
+        if not e["amount_cents"] and not e["hours"]:
+            return False, "决议至少要动钱或动时间"
+        return True, "ok"
+
+    if kind == "package":
+        for key in ("owner", "deadline", "acceptance"):
+            if not (e.get(key) or "").strip():
+                return False, f"任务包缺 {key}"
+        e["go_nogo"] = e.get("go_nogo") or "验收不过即回滚"
+        return True, "ok"
+
+    if kind == "product":
+        if not (e.get("name") or "").strip():
+            return False, "产品缺名字"
+        if e.get("line") not in {"app", "toy", "media", "personal"}:
+            return False, "line 必须是 app/toy/media/personal"
+        if not (e.get("owner") or "").strip():
+            return False, "产品缺负责人"
+        return True, "ok"
 
     if kind in {"spend", "income", "ledger"}:
         try:

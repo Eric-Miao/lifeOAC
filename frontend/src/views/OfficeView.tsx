@@ -1,6 +1,6 @@
 import OfficeCanvas from '../components/OfficeCanvas'
 import Drawer from '../components/Drawer'
-import type { Agent, Approval, ExecutionInfo, Message, Run, State } from '../types'
+import type { Agent, Approval, ExecutionInfo, Message, PackageEvent, Run, State } from '../types'
 
 const STATUS_LABEL: Record<string, string> = {
   working: '在办',
@@ -14,6 +14,7 @@ export default function OfficeView({
   selected,
   messages,
   runs,
+  packages,
   execution,
   onSelect,
   onSend,
@@ -25,6 +26,7 @@ export default function OfficeView({
   selected: Agent | null
   messages: Message[]
   runs: Run[]
+  packages: PackageEvent[]
   execution: ExecutionInfo
   onSelect: (id: string | null) => void
   onSend: (id: string, body: string) => Promise<void>
@@ -104,6 +106,7 @@ export default function OfficeView({
             messages={messages}
             approvals={state.approvals as Approval[]}
             runs={runs}
+            packages={packages}
             execution={execution}
             onSend={(body) => onSend(selected.id, body)}
             onResolve={onResolve}

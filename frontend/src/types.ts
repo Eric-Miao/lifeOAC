@@ -101,6 +101,27 @@ export type Entry = {
   product_id: string | null
 }
 
+export type DecisionEvent = {
+  id: number
+  ts: string
+  label: string | null
+  amount_cents: number
+  hours: number
+  period: string | null
+  actor: string
+}
+
+export type PackageEvent = {
+  id: number
+  ts: string
+  label: string | null
+  owner: string
+  deadline: string
+  acceptance: string
+  go_nogo?: string
+  hours?: number
+}
+
 export type LlmModel = {
   providerID: string
   id: string
@@ -130,6 +151,8 @@ export type State = {
   products: Product[]
   runs: Run[]
   entries: Entry[]
+  decisions: DecisionEvent[]
+  packages: PackageEvent[]
   execution: ExecutionInfo
   llm: { online: boolean; default: { providerID: string; id: string } }
   audit: AuditRow[]
