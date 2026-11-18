@@ -212,7 +212,9 @@ export default function App() {
 
         <div className="railfoot">
           <span className="sandbox">
-            <span>{data.execution.available ? '沙箱对话 · 执行真实' : '沙箱 · 未接模型'}</span>
+            <span>
+              {data.llm.online ? '对话接模型' : '沙箱对话'} · {data.execution.available ? '执行真实' : '执行未接'}
+            </span>
           </span>
           <span className="mono" style={{ fontSize: 10, color: 'var(--muted)' }}>
             v0.1 · {data.server_time.slice(11, 16)}

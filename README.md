@@ -36,6 +36,17 @@ npm run dev
 
 **Billing 是本系统调用模型的账单**，属于设置；**财务是公司的账**，属于一级页面。两者不混。
 
+## 对话（本地模型）
+
+设置 → LLM 里选 provider 与模型，每个席位可单独指定。默认走本机 opencode 服务的 `/api/experimental/generate/text`：
+
+```bash
+opencode service status     # 确认服务在跑
+curl -s localhost:8000/api/llm | head -c 200
+```
+
+**记账协议**：你在对话里报告一笔收支，CxO 会额外输出一个 `event` 块；后端过 `contracts.validate_event` 才入库，然后进财务的流水与损益。数字由代码加总，模型只负责说话。
+
 ## 真实执行（AutoSwarm）
 
 对话仍是本地模拟器；**派活是真的**。抽屉的第二栏能把一句话交给本机的 Codex / OpenCode / DSH，子代理在你给的工作区里动手，结果回写进对话与审计。
@@ -49,7 +60,7 @@ autoswarm agents                                                 # 看本机哪�
 
 ## 明确没有做的
 
-- **对话没有接模型。** CxO 的回复仍来自 `backend/app/sim.py` 的规则模拟器，消息标「沙箱」；只有「派活」走真实 CLI，结果标「真实执行」。
+- **对话已接模型，但只在本地服务在线时。** 走本机 opencode 的 v2 API（默认 `opencode-go/deepseek-v4.1-flash`），不可达时退回 `backend/app/sim.py` 的模拟器，消息会标「沙箱」。
 - **没有 ECE 会议协议。** 会议、材料包、任务包 schema 都还没落。这是骨架之后的第一件事。
 - **没有 plugin 机制。** 权限矩阵里留了 `plugin.install` 的口子，实现没写。
 - **没有真实财务数据。** 预算与审计都是示例值，界面上有标注。

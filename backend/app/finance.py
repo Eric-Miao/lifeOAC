@@ -15,11 +15,14 @@ def _sum(rows: list[sqlite3.Row]) -> int:
 
 
 def build(conn: sqlite3.Connection) -> dict:
-    ledger = conn.execute("SELECT * FROM ledger WHERE period = ? ORDER BY id", (PERIOD,)).fetchall()
+    rows = conn.execute(
+        "SELECT * FROM events WHERE period = ? AND kind IN ('ledger','spend','income') ORDER BY id",
+        (PERIOD,),
+    ).fetchall()
     names = {r["id"]: r["name"] for r in conn.execute("SELECT id, name FROM products")}
     ledger = [
         dict(r, label=f"{names[r['product_id']]} · {r['label']}" if r["product_id"] in names else r["label"])
-        for r in ledger
+        for r in rows
     ]
     revenue = [r for r in ledger if r["section"] == "revenue"]
     cogs = [r for r in ledger if r["section"] == "cogs"]

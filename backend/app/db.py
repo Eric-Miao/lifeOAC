@@ -92,6 +92,21 @@ CREATE TABLE IF NOT EXISTS products (
     note            TEXT
 );
 
+CREATE TABLE IF NOT EXISTS events (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts           TEXT NOT NULL,
+    kind         TEXT NOT NULL,
+    period       TEXT,
+    actor        TEXT NOT NULL,
+    subject      TEXT,
+    label        TEXT,
+    amount_cents INTEGER NOT NULL DEFAULT 0,
+    hours        INTEGER NOT NULL DEFAULT 0,
+    section      TEXT,
+    product_id   TEXT,
+    payload      TEXT
+);
+
 CREATE TABLE IF NOT EXISTS ledger (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     period       TEXT NOT NULL,
@@ -353,9 +368,24 @@ def seed(conn: sqlite3.Connection) -> None:
     )
 
     conn.executemany(
-        "INSERT INTO ledger (period, product_id, section, label, amount_cents, note)"
-        " VALUES (?,?,?,?,?,?)",
-        LEDGER,
+        "INSERT INTO events (ts, kind, period, actor, subject, label, amount_cents, hours, section, product_id, payload)"
+        " VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        [
+            (
+                now(),
+                "ledger",
+                period,
+                "system",
+                product_id,
+                label,
+                amount,
+                0,
+                section,
+                product_id,
+                json.dumps({"note": note}, ensure_ascii=False),
+            )
+            for period, product_id, section, label, amount, note in LEDGER
+        ],
     )
 
     conn.executemany(

@@ -654,14 +654,24 @@ a { color: inherit; }
 }
 .runinput::placeholder { color: rgba(100, 106, 96, 0.85); }
 
+.select {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  background: #fff;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink);
+}
+
 .runitem {
   border-top: 1px solid var(--rule);
   padding: 11px 0 12px;
 }
 .runhead { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
 .runprompt { font-size: 12.5px; line-height: 1.5; color: #2b3129; margin-bottom: 4px; }
-.runout {
-  margin: 8px 0 0;
+.runout {  margin: 8px 0 0;
   padding: 9px 10px;
   background: rgba(25, 29, 25, 0.035);
   border: 1px solid var(--rule);

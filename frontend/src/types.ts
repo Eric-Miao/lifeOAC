@@ -88,6 +88,32 @@ export type ExecutionInfo = {
   providers: { provider: string; available: boolean; version: string | null; verified: boolean }[]
 }
 
+export type Entry = {
+  id: number
+  ts: string
+  kind: string
+  period: string | null
+  actor: string
+  label: string | null
+  amount_cents: number
+  hours: number
+  section: string | null
+  product_id: string | null
+}
+
+export type LlmModel = {
+  providerID: string
+  id: string
+  name: string
+  cost?: { input: number; output: number } | null
+}
+
+export type LlmInfo = {
+  online: boolean
+  models: LlmModel[]
+  config: { default: { providerID: string; id: string }; agents: Record<string, { providerID: string; id: string }> }
+}
+
 export type Thread = {
   thread: string
   count: number
@@ -103,7 +129,9 @@ export type State = {
   budgets: Budget[]
   products: Product[]
   runs: Run[]
+  entries: Entry[]
   execution: ExecutionInfo
+  llm: { online: boolean; default: { providerID: string; id: string } }
   audit: AuditRow[]
 }
 

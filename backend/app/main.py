@@ -15,7 +15,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from . import execution, finance, runs, sim
+from . import chat, execution, finance, llm, runs, sim
 from .db import connect, now, seed
 
 
@@ -87,7 +87,7 @@ def post_message(agent_id: str, body: MessageIn) -> dict:
         (now(), "ceo", "message.send", agent_id, "—", "allow", body.body[:60]),
     )
     conn.commit()
-    sim.respond(conn, agent_id, body.body)
+    chat.reply(conn, agent_id, body.body)
     conn.commit()
 
     rows = conn.execute("SELECT * FROM messages WHERE thread = ? ORDER BY id", (agent_id,)).fetchall()
@@ -137,6 +137,31 @@ def cancel_run(run_id: int) -> dict:
     if not result.get("ok"):
         raise HTTPException(400, result.get("error") or "取消失败")
     return result
+
+
+@app.get("/api/llm")
+def get_llm() -> dict:
+    return {
+        "online": llm.online(),
+        "models": llm.models(),
+        "config": llm.config(),
+    }
+
+
+@app.put("/api/llm")
+def put_llm(body: dict) -> dict:
+    cfg = llm.config()
+    if "default" in body and isinstance(body["default"], dict):
+        cfg["default"] = body["default"]
+    if "agents" in body and isinstance(body["agents"], dict):
+        cfg.setdefault("agents", {}).update(body["agents"])
+    llm.save_config(cfg)
+    conn.execute(
+        "INSERT INTO audit (ts, actor, action, target, policy, decision, meta) VALUES (?,?,?,?,?,?,?)",
+        (now(), "ceo", "llm.config", "models", "—", "allow", json.dumps(cfg, ensure_ascii=False)[:120]),
+    )
+    conn.commit()
+    return {"ok": True, "config": cfg}
 
 
 @app.get("/api/finance")

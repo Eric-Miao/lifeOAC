@@ -62,3 +62,15 @@ export const startRun = (agentId: string, provider: string, prompt: string) =>
 
 export const cancelRun = (runId: number) =>
   fetch(`/api/runs/${runId}/cancel`, { method: 'POST' }).then((r) => json<{ ok: boolean }>(r))
+
+export const getLlm = () => fetch('/api/llm').then((r) => json<import('./types').LlmInfo>(r))
+
+export const putLlm = (body: {
+  default?: { providerID: string; id: string }
+  agents?: Record<string, { providerID: string; id: string }>
+}) =>
+  fetch('/api/llm', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).then((r) => json<{ ok: boolean }>(r))

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { getSettings, money, runDreaming } from '../api'
-import type { Settings } from '../types'
+import { getLlm, getSettings, money, putLlm, runDreaming } from '../api'
+import type { LlmInfo, Settings } from '../types'
 import PolicyPanel from './PolicyPanel'
 
 const TABS = [
   ['policy', '权限'],
+  ['llm', 'LLM'],
   ['billing', 'Billing'],
   ['memory', 'Memory'],
   ['plugins', 'Plugins'],
@@ -21,9 +22,18 @@ export default function SettingsView() {
   const [tab, setTab] = useState<Tab>('policy')
   const [s, setS] = useState<Settings | null>(null)
   const [dreaming, setDreaming] = useState(false)
+  const [llm, setLlm] = useState<LlmInfo | null>(null)
+  const [draft, setDraft] = useState<Record<string, { providerID: string; id: string }>>({})
+  const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     getSettings().then(setS).catch(() => setS(null))
+    getLlm()
+      .then((info) => {
+        setLlm(info)
+        setDraft({ default: info.config.default, ...info.config.agents })
+      })
+      .catch(() => setLlm(null))
   }, [])
 
   if (!s) return <div className="view"><p className="note">读取配置…</p></div>
@@ -41,6 +51,107 @@ export default function SettingsView() {
       </div>
 
       {tab === 'policy' && <PolicyPanel policy={s.policy} />}
+
+      {tab === 'llm' && (
+        <>
+          <div className="summary">
+            <div className="cell">
+              <span className="k">本地服务</span>
+              <span className="v" style={{ fontSize: 14 }}>
+                {llm?.online ? '在线' : '离线'}
+              </span>
+            </div>
+            <div className="cell">
+              <span className="k">可用模型</span>
+              <span className="v">{llm?.models.length ?? 0}</span>
+            </div>
+            <div className="cell">
+              <span className="k">默认</span>
+              <span className="v" style={{ fontSize: 13 }}>
+                {draft.default ? `${draft.default.providerID}/${draft.default.id}` : '—'}
+              </span>
+            </div>
+            <button
+              className="btn primary"
+              style={{ marginLeft: 'auto' }}
+              disabled={saved}
+              onClick={async () => {
+                await putLlm({ default: draft.default, agents: draft })
+                setSaved(true)
+                window.setTimeout(() => setSaved(false), 1600)
+              }}
+            >
+              {saved ? '已保存' : '保存'}
+            </button>
+          </div>
+
+          <p className="note" style={{ marginBottom: 18 }}>
+            对话走本地 OpenCode 服务。每个席位可以单独指定模型：秘书用便宜档，CFO 与 CPTO 用强档。
+            改动热生效，并写审计。
+          </p>
+
+          <table className="ledger">
+            <caption>每个席位用哪个模型</caption>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>席位</th>
+                <th>角色</th>
+                <th style={{ width: 360 }}>模型</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ['default', '默认', '未单独指定的席位'],
+                ['ceo', 'CEO', '你'],
+                ['sec', 'SEC', '秘书'],
+                ['cfo', 'CFO', '财务'],
+                ['cpto', 'CPTO', '技术'],
+                ['cmo', 'CMO', '市场'],
+                ['coo', 'COO', '运营'],
+                ['chro', 'CHRO', '人事'],
+                ['audit', 'AUD', '审计'],
+              ].map(([id, label, note], i) => (
+                <tr key={id}>
+                  <td className="idx num">{String(i + 1).padStart(2, '0')}</td>
+                  <td className="mono" style={{ fontSize: 11.5 }}>
+                    {label}
+                  </td>
+                  <td className="muted">{note}</td>
+                  <td>
+                    <select
+                      className="select"
+                      value={
+                        draft[id] ? `${draft[id].providerID}/${draft[id].id}` : ''
+                      }
+                      onChange={(e) => {
+                        const v = e.target.value
+                        if (!v) return
+                        const [providerID, ...rest] = v.split('/')
+                        setDraft({ ...draft, [id]: { providerID, id: rest.join('/') } })
+                      }}
+                    >
+                      <option value="">
+                        {id === 'default' ? '选择模型' : '跟随默认'}
+                      </option>
+                      {(llm?.models ?? []).map((m) => (
+                        <option key={`${m.providerID}/${m.id}`} value={`${m.providerID}/${m.id}`}>
+                          {m.providerID} / {m.id}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <p className="note" style={{ marginTop: 18 }}>
+            执行（派活）用的是另一套：Codex / OpenCode / DSH 由 AutoSwarm 拉起，见 Connectors。
+            这里是"说话"，那里是"动手"。
+          </p>
+        </>
+      )}
 
       {tab === 'billing' && (
         <>
